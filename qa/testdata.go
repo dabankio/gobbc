@@ -2,8 +2,10 @@ package qa
 
 import (
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/gobbc"
 )
+
+const bbcCoreImage = "dabankio/bbccore:0.11"
 
 //几组地址
 var (

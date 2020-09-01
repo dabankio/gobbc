@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/gobbc"
 )
 
 var changeTxVersionTo = "ffff" //某些链上要改tx版本

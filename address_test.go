@@ -8,13 +8,14 @@ import (
 
 func TestMakeKeyPair(t *testing.T) {
 	tw := &TW{t, true}
-	for i := 0; i < 2; i++ {
+	n := 100
+	for i := 0; i < n; i++ {
 		pair, err := MakeKeyPair()
 		tw.
 			Nil(err).
 			True(len(pair.Pubk) == PubkeyHexLen-1, "公钥长度异常", len(pair.Pubk)).
 			True(len(pair.Pubk) == len(pair.Privk), "公钥长度应该等于私钥长度？")
-		fmt.Printf("pair:%#v\n", pair)
+		t.Logf("pair:%#v\n", pair)
 	}
 }
 

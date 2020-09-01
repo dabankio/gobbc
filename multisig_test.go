@@ -2,8 +2,9 @@ package gobbc
 
 import (
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"testing"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 type key struct {
@@ -75,4 +76,45 @@ func TestTxidCal(t *testing.T) {
 	fmt.Println(b)
 	fmt.Println(blake2b.Sum256(b)) //=== RUN   TestTxidCal
 	// [207 225 2 244 19 144 49 82 77 173 113 180 238 70 103 253 20 237 190 22 73 206 11 128 235 123 239 224 176 98 39 58]
+}
+
+func TestParseMultisigTemplateHex(t *testing.T) {
+	tests := []struct {
+		name    string
+		hexData string
+		m, n    uint8
+		members []string
+		wantErr bool
+	}{
+		{
+			hexData: "0200020300000000000000efa449f09cc21c84179c3545674cf6274ad3d2b137fd358bd642b1835871a13401b4a73d1fdb6084d65a0c17ac80388c079e0d0abfb6d786a2440cff9ed748a84901b19c0c2be5e7a35b2de54b6f0753905815ba0a0b77b77cc3793f2063a37711a501",
+			m:       2,
+			n:       3,
+			members: []string{
+				"1xyj4kw4wr8e885ww6n2pek7p4x5d7mnh6zykb2yp8arr6p3hm4t87gqv",
+				"1pjkkt7yvc22dcpgc2yp80e4c0yf0t2nzpvbrd8j41kzsxnt8n14nb9q5",
+				"1p6e0raz5wyhnpbf59dqgemwgb0avm2gbeyvqsgvs7wg678vq26jt6e8w",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := TW{T: t}
+			got, err := ParseMultisigTemplateHex(tt.hexData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseMultisigTemplateHex() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			w.Equal(tt.m, got.M).
+				Equal(tt.n, got.N).
+				Equal(len(tt.members), len(got.Members))
+			for i, x := range got.Members {
+				pubk := CopyReverseThenEncodeHex(x.Pub)
+				addr, err := GetPubKeyAddress(pubk)
+				w.Nil(err).
+					Equal(tt.members[i], addr)
+			}
+		})
+	}
 }

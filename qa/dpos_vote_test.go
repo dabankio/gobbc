@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/gobbc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,6 +22,7 @@ func client(t *testing.T) *bbrpc.Client {
 }
 
 func TestDposVote2myself(t *testing.T) {
+	t.Skip()
 	r := require.New(t)
 	rpc := client(t)
 
@@ -55,6 +56,8 @@ func TestDposVote2myself(t *testing.T) {
 	fmt.Println("vote to myself txid", *txid)
 }
 func TestDposVote2tpl(t *testing.T) {
+	t.Skip()
+
 	r := require.New(t)
 	rpc := client(t)
 
@@ -92,6 +95,8 @@ func TestDposVote2tpl(t *testing.T) {
 	fmt.Println("vote to template txid", *txid)
 }
 func TestDposVoteRedeem(t *testing.T) {
+	t.Skip()
+
 	r := require.New(t)
 	rpc := client(t)
 
@@ -131,6 +136,8 @@ func TestDposVoteRedeem(t *testing.T) {
 }
 
 func TestSendfrom(t *testing.T) {
+	t.Skip()
+
 	r := require.New(t)
 	rpc := client(t)
 	var (

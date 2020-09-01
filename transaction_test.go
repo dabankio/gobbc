@@ -158,3 +158,12 @@ func TestTXBuilder(t *testing.T) {
 	encodeTX, err := tx.Encode(false)
 	w.Nil(err).Equal(createTX, encodeTX)
 }
+
+func TestEncodeTX(t *testing.T) {
+	w := TW{T: t}
+	d := `010000001a8bd05e0000000032bde886ac78e6936fcf79f175dde0b1ba75b3f05984ec941077d0d2951100000183e9f785c685d20f2996b0995517eb1ca585341bfef2e38abdcb7d21c5d5cf5e00013ec340e16d2359548755d181d36eaaaa16629e0e312d051e0f89a8d4617cefe7008c86470000000010270000000000001a16190bd33d8742fc99056ca40cb3e3d51a8bd05e00313131313140fca924b45ea0328bc08110741af079c5f39b5218fab3e10645871e45f70c9daa143178952447699e9c6bcf179ab0dcdd62034a186386e17babc8aef8a7d69800`
+	rtx, err := DecodeRawTransaction(d, true)
+	w.Nil(err)
+	tx := rtx.ToTransaction(true)
+	fmt.Println(JSONIndent(tx))
+}

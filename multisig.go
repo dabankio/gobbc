@@ -69,6 +69,10 @@ func ParseMultisigTemplateHex(hexData string) (*MultisigInfo, error) {
 }
 
 // CryptoMultiSign pubks 公钥数组，privk 私钥, msg 待签名数据, sig 已有签名
+// 签名结构参考：https://github.com/bigbangcore/BigBang/wiki/%E5%A4%9A%E9%87%8D%E7%AD%BE%E5%90%8D#%E7%AD%BE%E5%90%8D
+//                          index                     R1           S1              Rn            Sn
+// signature: |_________________________________|____________|____________|...|____________|____________|
+//              (keys-length - 1) / 8 + 1 bytes    32 bytes     32 bytes         32 bytes      32 bytes
 func CryptoMultiSign(pubks [][]byte, privk ed25519.PrivateKey, msg []byte, currentSig []byte) ([]byte, error) {
 	sort.Sort(littleEndianPubks(pubks))
 

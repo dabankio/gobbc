@@ -80,6 +80,9 @@ func ParsePublicKeyHex(hexedPubK string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to hex decode private key, %v", err)
 	}
+	if l := len(b); l != 32 {
+		return nil, fmt.Errorf("invalid public key, invalid len: %d", l)
+	}
 	return reverseBytes(b), nil
 }
 

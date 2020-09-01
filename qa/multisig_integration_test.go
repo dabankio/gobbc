@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/devtools4chains"
+	"github.com/dabankio/gobbc"
 )
 
 func TestMultisigMN(t *testing.T) {
@@ -27,10 +28,9 @@ func TestMultisigMN(t *testing.T) {
 		{m: 1, n: 4, skip: false},
 	}
 
-	killBigBangServer, client, minerAddress := bbrpc.TesttoolRunServerAndBeginMint(t, bbrpc.RunBigBangOptions{
-		NewTmpDir: true, NotPrint2stdout: true,
-	})
-	defer killBigBangServer()
+	nodeInfo := devtools4chains.MustRunDockerDevCore(t, bbcCoreImage, true, true)
+	client := nodeInfo.Client
+	minerAddress := nodeInfo.MinerAddress
 
 	tw.Nil(bbrpc.Wait4balanceReach(minerAddress, 100, client))
 
@@ -80,6 +80,7 @@ func TestMultisigMN(t *testing.T) {
 
 		amount := 99.0
 		{ //往多签地址转入资金
+			_, _ = client.Unlockkey(nodeInfo.MinerOwnerPubk, nodeInfo.UnlockPass, nil)
 			_, err = client.Sendfrom(bbrpc.CmdSendfrom{
 				To:     *tplAddr,
 				From:   minerAddress,
@@ -145,13 +146,12 @@ func TestMultisigMN(t *testing.T) {
 	}
 }
 
-// 开发用,x-2签名,节点导入第0个私钥
+// 开发用,x-2签名,节点导入第0个私钥, SDK签名应该和core签名一致
 func Test_DevMultisig_1of2(t *testing.T) {
 	tw := gobbc.TW{T: t}
-	killBigBangServer, client, minerAddress := bbrpc.TesttoolRunServerAndBeginMint(t, bbrpc.RunBigBangOptions{
-		NewTmpDir: true, NotPrint2stdout: true,
-	})
-	defer killBigBangServer()
+	nodeInfo := devtools4chains.MustRunDockerDevCore(t, bbcCoreImage, true, true)
+	client := nodeInfo.Client
+	minerAddress := nodeInfo.MinerAddress
 
 	tw.Nil(bbrpc.Wait4balanceReach(minerAddress, 100, client))
 
@@ -169,7 +169,6 @@ func Test_DevMultisig_1of2(t *testing.T) {
 	a0, a1 := addrs[0], addrs[1]
 
 	multisigAddr, err := client.Addnewtemplate(bbrpc.AddnewtemplateParamMultisig{
-		// Required: 1,
 		Required: 2,
 		Pubkeys:  []string{a0.Pubk, a1.Pubk},
 	})
@@ -190,6 +189,7 @@ func Test_DevMultisig_1of2(t *testing.T) {
 
 	amount := 99.0
 	{ //往多签地址转入资金
+		_, _ = client.Unlockkey(nodeInfo.MinerOwnerPubk, nodeInfo.UnlockPass, nil)
 		_, err = client.Sendfrom(bbrpc.CmdSendfrom{
 			To:     *multisigAddr,
 			From:   minerAddress,
@@ -238,10 +238,6 @@ func Test_DevMultisig_1of2(t *testing.T) {
 				//decode
 				tx, err := gobbc.DecodeRawTransaction(sdkSignResult, true)
 				tw.Nil(err)
-				// fmt.Println("gobbc decode tx:", gobbc.JSONIndent(tx))
-				// hb, err := tx.Encode(false)
-				// fmt.Println("tx encode tx:", hb)
-				// tw.Nil(err).Equal(sdkSignResult, hb, "应该正确编码tx")
 				tw.Nil(tx.SignWithPrivateKey(multisigAddrHex, a.Privk))
 
 				sdkSignResult, err = tx.Encode(true)
@@ -276,11 +272,9 @@ func Test_DevMultisig_1of2(t *testing.T) {
 // 测试单个节点2个地址的多重签名,只将模版导入钱包，不导入私钥
 func TestMultisigOnlyTemplate(t *testing.T) {
 	tw := gobbc.TW{T: t}
-	killBigBangServer, client, minerAddress := bbrpc.TesttoolRunServerAndBeginMint(t, bbrpc.RunBigBangOptions{
-		NewTmpDir: true, NotPrint2stdout: true,
-		// NewTmpDir: true,
-	})
-	defer killBigBangServer()
+	nodeInfo := devtools4chains.MustRunDockerDevCore(t, bbcCoreImage, true, true)
+	client := nodeInfo.Client
+	minerAddress := nodeInfo.MinerAddress
 
 	tw.Nil(bbrpc.Wait4balanceReach(minerAddress, 100, client))
 
@@ -334,6 +328,7 @@ func TestMultisigOnlyTemplate(t *testing.T) {
 
 	amount := 99.0
 	{ //往多签地址转入资金
+		_, _ = client.Unlockkey(nodeInfo.MinerOwnerPubk, nodeInfo.UnlockPass, nil)
 		_, err = client.Sendfrom(bbrpc.CmdSendfrom{
 			To:     *multisigAddr,
 			From:   minerAddress,

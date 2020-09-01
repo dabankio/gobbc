@@ -5,21 +5,20 @@ import (
 	"testing"
 
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/devtools4chains"
+	"github.com/dabankio/gobbc"
 )
 
 // 1 测试生成的地址，导入后与钱包获取到的公钥一致
 // 2 交易签名可以正常上链
 // 3 序列化和解析正常
-
 func TestMakekeypair(t *testing.T) {
 	tw := gobbc.TW{T: t}
 	const pass = "123"
 
-	killNode, client, minerAddr := bbrpc.TesttoolRunServerAndBeginMint(t, bbrpc.RunBigBangOptions{
-		NewTmpDir: true, NotPrint2stdout: false, KeepTmpDirInKill: true,
-	})
-	defer killNode()
+	nodeInfo := devtools4chains.MustRunDockerDevCore(t, bbcCoreImage, true, true)
+	client := nodeInfo.Client
+	minerAddr := nodeInfo.MinerAddress
 
 	pair, err := gobbc.MakeKeyPair()
 	tw.Nil(err)
@@ -37,6 +36,9 @@ func TestMakekeypair(t *testing.T) {
 	outAmount := 10.0
 	{ //准备资金给地址
 		tw.Continue(false).Nil(bbrpc.Wait4balanceReach(minerAddr, 100, client))
+		_, err = client.Unlockkey(nodeInfo.MinerOwnerPubk, nodeInfo.UnlockPass, nil)
+		fmt.Println("sendfrom ", minerAddr, pair.Addr, prepareAmount)
+		tw.Nil(err)
 		_, err = client.Sendfrom(bbrpc.CmdSendfrom{
 			From:   minerAddr,
 			To:     pair.Addr,

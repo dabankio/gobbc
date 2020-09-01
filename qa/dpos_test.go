@@ -1,15 +1,15 @@
 package qa
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/dabankio/bbrpc"
-	"github.com/lomocoin/gobbc"
+	"github.com/dabankio/gobbc"
 )
 
 func init() {
@@ -270,19 +270,54 @@ func TestPosSDK(t *testing.T) {
 }
 
 func TestGenPrefixAddr(t *testing.T) {
-	// t.Skip("使用时打开")
-	const prefix = "1m1n"
-	const n = 1 //要几个
-	count := 0
-	for x := 0; count < n; x++ {
-		p, _ := gobbc.MakeKeyPair()
-		if strings.HasPrefix(p.Addr, prefix+strconv.Itoa(count)) {
-			fmt.Printf("\n%#v\n", p)
-			count++
+	t.Skip("使用时打开")
+
+	// const prefix = "1dpsd"
+	// const prefix = "1cna"
+	const prefix = "1cnk"
+	const n = 2 //要几个
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	retChan := make(chan gobbc.AddrKeyPair, 2)
+	defer close(retChan)
+
+	goroutineNums := 5
+
+	var suffixChan []chan string
+	for i := 0; i < goroutineNums; i++ {
+		sc := make(chan string, 3)
+		defer close(sc)
+		suffixChan = append(suffixChan, sc)
+		go func(_ctx context.Context, _sc chan string) {
+			suffix := "a"
+			for {
+				select {
+				case newSuffix := <-_sc:
+					suffix = newSuffix
+				case <-_ctx.Done():
+					fmt.Println("ctx done")
+					return
+				default:
+				}
+				p, _ := gobbc.MakeKeyPair()
+
+				if strings.HasPrefix(p.Addr, prefix+suffix) {
+					retChan <- p
+				}
+			}
+
+		}(ctx, sc)
+	}
+
+	suffix := []string{"a", "b", "c"}
+	for count := 0; count < n; count++ {
+		for _, c := range suffixChan {
+			c <- suffix[count]
 		}
-		if x%20000 == 0 {
-			fmt.Print(".")
-		}
+		x := <-retChan
+		fmt.Printf("%#v\n", x)
 	}
 }
 
@@ -624,6 +659,3 @@ func TestPOSMultisigMultiDelegate(t *testing.T) {
 	log.Println("done")
 	time.Sleep(5 * time.Second)
 }
-
-// - delegate template owner 可以是多签地址吗？
-// - vote template owner 可以是多签地址吗？
