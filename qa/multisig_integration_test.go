@@ -104,14 +104,14 @@ func TestMultisigMN(t *testing.T) {
 			var sdkSignResult string
 			{ //gobbc 测试
 				//decode
-				tx, err := gobbc.DecodeRawTransaction(*rawtx, false)
+				tx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *rawtx, false)
 				tw.Nil(err)
 				//sign 1
 				for i := 0; i < mnt.m; i++ {
-					beforeSdkSign, err := tx.Encode(true)
+					beforeSdkSign, err := tx.Encode(gobbc.BBCSerializer, true)
 					tw.Nil(err)
 
-					tw.Nil(tx.SignWithPrivateKey(multisigAddrHex, addrs[i].Privk))
+					tw.Nil(tx.SignWithPrivateKey(gobbc.BBCSerializer, multisigAddrHex, addrs[i].Privk))
 
 					_, err = client.Importprivkey(addrs[i].Privk, _pass)
 					tw.Nil(err)
@@ -123,7 +123,7 @@ func TestMultisigMN(t *testing.T) {
 					tw.NotZero(sret)
 					// fmt.Println("core_signed_multisig_tx:", sret.Hex)
 
-					sdkSignResult, err = tx.Encode(true)
+					sdkSignResult, err = tx.Encode(gobbc.BBCSerializer, true)
 					tw.Nil(err)
 
 					tw.Equal(sret.Hex, sdkSignResult, "sdk签名应该与core签名一致", *rawtx, multisigAddrHex)
@@ -236,11 +236,11 @@ func Test_DevMultisig_1of2(t *testing.T) {
 
 			{ //gobbc 测试
 				//decode
-				tx, err := gobbc.DecodeRawTransaction(sdkSignResult, true)
+				tx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, sdkSignResult, true)
 				tw.Nil(err)
-				tw.Nil(tx.SignWithPrivateKey(multisigAddrHex, a.Privk))
+				tw.Nil(tx.SignWithPrivateKey(gobbc.BBCSerializer, multisigAddrHex, a.Privk))
 
-				sdkSignResult, err = tx.Encode(true)
+				sdkSignResult, err = tx.Encode(gobbc.BBCSerializer, true)
 				tw.Nil(err)
 				// fmt.Println("gobbc multisig:", sdkSignResult)
 				tw.Continue(false).Equal(coreSigned.Hex, sdkSignResult, "sdk签名应该与core签名一致", i, *rawtx)
@@ -248,7 +248,7 @@ func Test_DevMultisig_1of2(t *testing.T) {
 			// fmt.Printf("core sign and sdk sign:\n%s\n%s\n", coreSigned.Hex, sdkSignResult)
 
 			{ //gobbc 测试
-				// tx, err := gobbc.DecodeRawTransaction(coreSigned.Hex, true)
+				// tx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer,coreSigned.Hex, true)
 				// tw.Nil(err)
 				// fmt.Println("gobbc decode tx:", gobbc.JSONIndent(tx))
 				// encodeTX, err := tx.Encode(true)
@@ -352,17 +352,17 @@ func TestMultisigOnlyTemplate(t *testing.T) {
 		var sdkSignResult string
 		{ //gobbc 测试
 			//decode
-			tx, err := gobbc.DecodeRawTransaction(*rawtx, false)
+			tx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *rawtx, false)
 			tw.Nil(err)
-			hb, err := tx.Encode(false)
+			hb, err := tx.Encode(gobbc.BBCSerializer, false)
 			// fmt.Println("tx encode tx:", hb)
 			tw.Nil(err).
 				Equal(*rawtx, hb)
 			//sign 1
-			tw.Nil(tx.SignWithPrivateKey(multisigAddrHex, a1.Privkey))
-			tw.Nil(tx.SignWithPrivateKey(multisigAddrHex, a0.Privkey))
+			tw.Nil(tx.SignWithPrivateKey(gobbc.BBCSerializer, multisigAddrHex, a1.Privkey))
+			tw.Nil(tx.SignWithPrivateKey(gobbc.BBCSerializer, multisigAddrHex, a0.Privkey))
 
-			sdkSignResult, err = tx.Encode(true)
+			sdkSignResult, err = tx.Encode(gobbc.BBCSerializer, true)
 			tw.Nil(err)
 			// fmt.Println("gobbc multisig:", sdkSignResult)
 		}

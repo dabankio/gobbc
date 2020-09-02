@@ -44,12 +44,12 @@ func TestDposVote2myself(t *testing.T) {
 	})
 	r.NoError(err)
 
-	rawtx, err := gobbc.DecodeRawTransaction(*tx, true)
+	rawtx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *tx, true)
 	r.NoError(err)
 	rawtx.Version = math.MaxUint16
-	err = rawtx.SignWithPrivateKey("", miner.Privk)
+	err = rawtx.SignWithPrivateKey(gobbc.BBCSerializer, "", miner.Privk)
 	r.NoError(err)
-	signedTX, err := rawtx.Encode(true)
+	signedTX, err := rawtx.Encode(gobbc.BBCSerializer, true)
 	r.NoError(err)
 	txid, err := rpc.Sendtransaction(signedTX)
 	r.NoError(err)
@@ -81,13 +81,13 @@ func TestDposVote2tpl(t *testing.T) {
 	})
 	r.NoError(err)
 
-	rawtx, err := gobbc.DecodeRawTransaction(*tx, true)
+	rawtx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *tx, true)
 	r.NoError(err)
 	fmt.Println("create tx", *tx)
 	rawtx.Version = math.MaxUint16
-	err = rawtx.SignWithPrivateKey("", owner.Privk)
+	err = rawtx.SignWithPrivateKey(gobbc.BBCSerializer, "", owner.Privk)
 	r.NoError(err)
-	signedTX, err := rawtx.Encode(true)
+	signedTX, err := rawtx.Encode(gobbc.BBCSerializer, true)
 	r.NoError(err)
 	fmt.Println("signed TX:", signedTX)
 	txid, err := rpc.Sendtransaction(signedTX)
@@ -122,12 +122,12 @@ func TestDposVoteRedeem(t *testing.T) {
 	r.NoError(err)
 
 	fmt.Println("createtransaction", *tx)
-	rawtx, err := gobbc.DecodeRawTransaction(*tx, true)
+	rawtx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *tx, true)
 	r.NoError(err)
 	rawtx.Version = math.MaxUint16
-	err = rawtx.SignWithPrivateKey("", owner.Privk)
+	err = rawtx.SignWithPrivateKey(gobbc.BBCSerializer, "", owner.Privk)
 	r.NoError(err)
-	signedTX, err := rawtx.Encode(true)
+	signedTX, err := rawtx.Encode(gobbc.BBCSerializer, true)
 	r.NoError(err)
 	fmt.Println("signed TX:", signedTX)
 	txid, err := rpc.Sendtransaction(signedTX)
@@ -158,13 +158,13 @@ func TestSendfrom(t *testing.T) {
 	r.NoError(err)
 	fmt.Println("rawtx:", *tx)
 
-	rawtx, err := gobbc.DecodeRawTransaction(*tx, false)
+	rawtx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *tx, false)
 	r.NoError(err)
 	fmt.Println("tx.version:", rawtx.Version)
 	rawtx.Version = math.MaxUint16
-	err = rawtx.SignWithPrivateKey("", owner.Privk)
+	err = rawtx.SignWithPrivateKey(gobbc.BBCSerializer, "", owner.Privk)
 	r.NoError(err)
-	signedTX, err := rawtx.Encode(true)
+	signedTX, err := rawtx.Encode(gobbc.BBCSerializer, true)
 	r.NoError(err)
 	fmt.Println("signedTX:", signedTX)
 

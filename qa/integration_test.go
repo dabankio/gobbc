@@ -56,13 +56,13 @@ func TestMakekeypair(t *testing.T) {
 		})
 		tw.Nil(err).True(txdata != nil)
 
-		tx, err := gobbc.DecodeRawTransaction(*txdata, false)
+		tx, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *txdata, false)
 		tw.Nil(err)
 		// tx.Version = math.MaxUint16
 		// _ = math.MaxUint16
-		tw.Nil(tx.SignWithPrivateKey("", pair.Privk))
+		tw.Nil(tx.SignWithPrivateKey(gobbc.BBCSerializer, "", pair.Privk))
 
-		signedTx, err := tx.Encode(true)
+		signedTx, err := tx.Encode(gobbc.BBCSerializer, true)
 		tw.Nil(err)
 
 		_, err = client.Unlockkey(pair.Pubk, pass, nil)

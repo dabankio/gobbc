@@ -23,12 +23,12 @@ func signAndSendtransaction(cmd bbrpc.CmdSendfrom, privateKeys []string, client 
 		_tx := changeTxVersionTo + (*txP)[4:]
 		txP = &_tx
 	}
-	rawTX, err := gobbc.DecodeRawTransaction(*txP, false)
+	rawTX, err := gobbc.DecodeRawTransaction(gobbc.BBCSerializer, *txP, false)
 	if err != nil {
 		return nil, err
 	}
 	if len(tplAddress) == 0 {
-		err = rawTX.SignWithPrivateKey("", privateKeys[0])
+		err = rawTX.SignWithPrivateKey(gobbc.BBCSerializer, "", privateKeys[0])
 		if err != nil {
 			return nil, err
 		}
@@ -46,13 +46,13 @@ func signAndSendtransaction(cmd bbrpc.CmdSendfrom, privateKeys []string, client 
 
 		}
 		for _, privateKey := range privateKeys {
-			err = rawTX.SignWithPrivateKey(templateData, privateKey)
+			err = rawTX.SignWithPrivateKey(gobbc.BBCSerializer, templateData, privateKey)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
-	signedTx, err := rawTX.Encode(true)
+	signedTx, err := rawTX.Encode(gobbc.BBCSerializer, true)
 	if err != nil {
 		return nil, err
 	}
