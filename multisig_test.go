@@ -66,10 +66,10 @@ func TestTxidCal(t *testing.T) {
 
 	tw := TW{T: t}
 	data := "010000000dedfa5d00000000d4a8f445791e35471b69254e444a4eac2e2448f57b420a6535f935c3000000000153acd59d5c42024c66c62f4fb7e176776046e2237425048fe92979ea0dedfa5d00018aa81abeebdb87a64040aa9c3a229725383cfc2af49d6573cb9c62b74a531059e0aebb000000000064000000000000000000"
-	tx, err := DecodeRawTransaction(data, false)
+	tx, err := DecodeRawTransaction(BBCSerializer, data, false)
 	tw.Nil(err)
 
-	b, err := tx.EncodeBytes(false)
+	b, err := tx.EncodeBytes(BBCSerializer, false)
 	tw.Nil(err)
 
 	b = b[:len(b)-1]

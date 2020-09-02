@@ -6,10 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"log"
 	"strings"
-	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -18,10 +15,18 @@ import (
 )
 
 // DecodeRawTransaction hexed tx parse
-func DecodeRawTransaction(txData string, decodeSignData bool) (*Transaction, error) {
-	rtx, err := txDeserialize(txData, decodeSignData)
+func DecodeRawTransaction(serializer Serializer, txData string, decodeSignData bool) (*Transaction, error) {
+	b, err := hex.DecodeString(txData)
+	if err != nil {
+		return nil, fmt.Errorf("hex decode tx data failed, %v", err)
+	}
+	rtx, err := serializer.Deserialize(b)
 	if err != nil {
 		return nil, err
+	}
+	if !decodeSignData {
+		rtx.SizeSign = 0
+		rtx.SignBytes = []byte{}
 	}
 	tx := rtx.ToTransaction(decodeSignData)
 	return &tx, nil
@@ -31,7 +36,7 @@ func DecodeRawTransaction(txData string, decodeSignData bool) (*Transaction, err
 func (rtx RawTransaction) ToTransaction(includeSignData bool) Transaction {
 	tx := Transaction{RawTransaction: rtx}
 	tx.HashAnchor = hex.EncodeToString(CopyReverse(tx.HashAnchorBytes[:]))
-	tx.Address, _ = GetPubKeyAddress(hex.EncodeToString(CopyReverse(tx.AddressBytes[:])))
+	tx.Address, _ = EncodeAddress(tx.Prefix, hex.EncodeToString(CopyReverse(tx.AddressBytes[:])))
 	if includeSignData {
 		tx.Sign = hex.EncodeToString(tx.SignBytes)
 	}
@@ -47,117 +52,9 @@ func (rtx RawTransaction) ToTransaction(includeSignData bool) Transaction {
 	return tx
 }
 
-func writeSize(size uint64, buf *bytes.Buffer) error {
-	switch sz := size; {
-	case sz < 0xFD:
-		return binary.Write(buf, binary.LittleEndian, uint8(size))
-	case sz <= 0xffff:
-		buf.WriteByte(0xfd)
-		return binary.Write(buf, binary.LittleEndian, uint16(size))
-	case sz <= 0xFFFFFFFF:
-		buf.WriteByte(0xfe)
-		return binary.Write(buf, binary.LittleEndian, uint32(size))
-	case sz > 0xFFFFFFFF:
-		buf.WriteByte(0xff)
-		return binary.Write(buf, binary.LittleEndian, size)
-	default:
-		return fmt.Errorf("should not here, write size, unexpected size: %d", size)
-	}
-}
-func readSize(reader io.ByteReader, buffer io.Reader) (uint64, error) {
-	sizeFlag, err := reader.ReadByte()
-	if err != nil {
-		return 0, fmt.Errorf("unable to read size byte, %v", err)
-	}
-	switch sz := sizeFlag; {
-	case sz < 0xfd:
-		return uint64(sz), nil
-	case sz == 0xfd:
-		var size uint16
-		e := binary.Read(buffer, binary.LittleEndian, &size)
-		return uint64(size), e
-	case sz == 0xfe:
-		var size uint32
-		e := binary.Read(buffer, binary.LittleEndian, &size)
-		return uint64(size), e
-	case sz == 0xff:
-		var size uint64
-		e := binary.Read(buffer, binary.LittleEndian, &size)
-		return size, e
-	default:
-		return 0, fmt.Errorf("unexpected size flag %d", sz)
-	}
-}
-
-func txDeserialize(txData string, decodeSignData bool) (*RawTransaction, error) {
-	b, err := hex.DecodeString(txData)
-	if err != nil {
-		return nil, err
-	}
-
-	var errs []error
-
-	tx := new(RawTransaction)
-	buffer := bytes.NewBuffer(b)
-	read := func(v interface{}) {
-		if e := binary.Read(buffer, binary.LittleEndian, v); e != nil {
-			log.Printf("[ERR]解析tx数据时无法读取到字段: %v(%T)\n", v, v)
-			errs = append(errs, e)
-		}
-	}
-
-	var size int
-	read(&tx.Version)
-	read(&tx.Typ)
-	read(&tx.Timestamp)
-	read(&tx.LockUntil)
-	copy(tx.HashAnchorBytes[:], buffer.Next(int(unsafe.Sizeof(tx.HashAnchorBytes))))
-
-	// read(&tx.SizeIn)
-	tx.SizeIn, err = readSize(buffer, buffer)
-	if err != nil {
-		return nil, fmt.Errorf("read input size err, %v", err)
-	}
-
-	size = 33 * int(tx.SizeIn)
-	tx.Input = make([]byte, size)
-	copy(tx.Input, buffer.Next(size))
-
-	read(&tx.Prefix)
-	copy(tx.AddressBytes[:], buffer.Next(int(unsafe.Sizeof(tx.AddressBytes))))
-	read(&tx.Amount)
-	read(&tx.TxFee)
-	// read(&tx.SizeOut)
-	tx.SizeOut, err = readSize(buffer, buffer)
-	if err != nil {
-		return nil, fmt.Errorf("read output size err, %v", err)
-	}
-
-	size = int(tx.SizeOut)
-	tx.VchData = make([]byte, size)
-	copy(tx.VchData, buffer.Next(size)) //考虑逻辑是什么？。。。是不是直接表示字节数，而不是out的笔数
-
-	// fmt.Println("[dbg] parsed tx", JSONIndent(tx))
-	if decodeSignData {
-		tx.SizeSign, err = readSize(buffer, buffer)
-		if err != nil {
-			return nil, fmt.Errorf("read signature size err, %v", err)
-		}
-
-		size = int(tx.SizeSign)
-		tx.SignBytes = make([]byte, size)
-		copy(tx.SignBytes, buffer.Next(size))
-	}
-
-	if len(errs) != 0 {
-		err = fmt.Errorf("some errors when read binary: %v", errs)
-	}
-	return tx, err
-}
-
 // Encode .
-func (rtx *RawTransaction) Encode(encodeSignData bool) (string, error) {
-	b, err := rtx.EncodeBytes(encodeSignData)
+func (rtx *RawTransaction) Encode(serializer Serializer, encodeSignData bool) (string, error) {
+	b, err := rtx.EncodeBytes(serializer, encodeSignData)
 	if err != nil {
 		return "", err
 	}
@@ -165,52 +62,30 @@ func (rtx *RawTransaction) Encode(encodeSignData bool) (string, error) {
 }
 
 // EncodeBytes .
-func (rtx *RawTransaction) EncodeBytes(encodeSignData bool) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-
-	var errs []error
-
-	write := func(v interface{}) {
-		if e := binary.Write(buf, binary.LittleEndian, v); e != nil {
-			errs = append(errs, e)
-		}
+func (rtx *RawTransaction) EncodeBytes(serializer Serializer, encodeSignData bool) ([]byte, error) {
+	tx := *rtx
+	if !encodeSignData {
+		tx.SizeSign = 0
+		tx.SignBytes = []byte{}
 	}
-	fnWriteSize := func(size uint64) {
-		if e := writeSize(size, buf); e != nil {
-			errs = append(errs, e)
-		}
-	}
-	write(rtx.Version)
-	write(rtx.Typ)
-	write(rtx.Timestamp)
-	write(rtx.LockUntil)
-	buf.Write(rtx.HashAnchorBytes[:])
-	fnWriteSize(rtx.SizeIn)
-
-	buf.Write(rtx.Input) //:33*int(rtx.SizeIn)
-	write(rtx.Prefix)
-	buf.Write(rtx.AddressBytes[:])
-	write(rtx.Amount)
-	write(rtx.TxFee)
-	fnWriteSize(rtx.SizeOut)
-	buf.Write(rtx.VchData)
-	if encodeSignData {
-		fnWriteSize(rtx.SizeSign)
-		buf.Write(rtx.SignBytes)
-	} else {
-		buf.WriteByte(0) //表示不包含签名数据
-	}
-
-	var err error
-	if len(errs) != 0 {
-		err = fmt.Errorf("some errors when write binary: %v", errs)
-	}
-	return buf.Bytes(), err
+	return serializer.Serialize(tx)
 }
 
-// Txid 计算txid
-func (rtx *RawTransaction) Txid() ([32]byte, error) {
-	msg, err := rtx.EncodeBytes(false)
+// Txid serialize tx -> blake2bSum256 -> reverse(got x) -> replace [0:4] with timestamp(bigEndian) -> hex encode
+func (rtx *RawTransaction) Txid(serializer Serializer) (string, error) {
+	msg, err := serializer.Serialize(*rtx)
+	if err != nil {
+		return "", fmt.Errorf("serialize tx err, %v", err)
+	}
+	hash := blake2b.Sum256(msg)
+	b := reverseBytes(hash[:])
+	binary.BigEndian.PutUint32(b[:], uint32(rtx.Timestamp))
+	return hex.EncodeToString(b[:]), nil
+}
+
+// TxHash 计算tx hash, tx hash用于签名，签名本质上对txHash 进行ed25519签名
+func (rtx *RawTransaction) TxHash(serializer Serializer) ([32]byte, error) {
+	msg, err := rtx.EncodeBytes(serializer, false)
 	if err != nil {
 		return [32]byte{}, fmt.Errorf("failed to encode tx to sign msg, %v", err)
 	}
@@ -240,7 +115,7 @@ func (rtx *RawTransaction) Txid() ([32]byte, error) {
 // 从pow挖矿模版地址转出->pow挖矿模版地址
 //
 // 注意：签名逻辑不对模版数据进行严格合理的校验，因为离线环境下无法感知模版数据的有效性，调用方需自行确保参数正确
-func (rtx *RawTransaction) SignWithPrivateKey(templateDataList, privkHex string) error {
+func (rtx *RawTransaction) SignWithPrivateKey(serializer Serializer, templateDataList, privkHex string) error {
 	var rawTemplateBytes []byte //移除每个模版的前2个byte（类型说明），并join
 	var multisigTemplateData string
 
@@ -265,13 +140,13 @@ func (rtx *RawTransaction) SignWithPrivateKey(templateDataList, privkHex string)
 	if err != nil {
 		return fmt.Errorf("unable to parse private key from hex data")
 	}
-	txid, err := rtx.Txid()
+	txHash, err := rtx.TxHash(serializer)
 	if err != nil {
 		return fmt.Errorf("calculate txid failed, %v", err)
 	}
 
 	if multisigTemplateData == "" { //单签
-		sigBytes := ed25519.Sign(privk, txid[:])
+		sigBytes := ed25519.Sign(privk, txHash[:])
 		if len(rawTemplateBytes) > 0 {
 			rtx.SignBytes = append(rawTemplateBytes, sigBytes...)
 		} else {
@@ -305,7 +180,7 @@ func (rtx *RawTransaction) SignWithPrivateKey(templateDataList, privkHex string)
 	if err != nil {
 		return fmt.Errorf("failed to parse multisig template data, %v", err)
 	}
-	sig, err := CryptoMultiSign(multisigInfo.Pubks(), privk, txid[:], sigPart)
+	sig, err := CryptoMultiSign(multisigInfo.Pubks(), privk, txHash[:], sigPart)
 	if err != nil {
 		return fmt.Errorf("CryptoMultiSign error, %v", err)
 	}

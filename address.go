@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 //some len const
@@ -132,6 +133,13 @@ func GetPubKeyAddress(pubk string) (string, error) {
 	var ui uint256
 	uint256SetHex(&ui, pubk)
 	return "1" + Base32Encode(ui[:]), nil
+}
+
+// EncodeAddress Get Address hex string from public key hex string
+func EncodeAddress(prefix uint8, pubk string) (string, error) {
+	var ui uint256
+	uint256SetHex(&ui, pubk)
+	return strconv.Itoa(int(prefix)) + Base32Encode(ui[:]), nil
 }
 
 // ConvertAddress2pubk .

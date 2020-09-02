@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var Debug bool
+
 // UntilError execute all func until error returned
 func UntilError(fns ...func() error) error {
 	for _, fn := range fns {

@@ -79,7 +79,7 @@ func (tw *TW) NotZero(v interface{}, args ...interface{}) *TW {
 func (tw *TW) Equal(expected, actual interface{}, args ...interface{}) *TW {
 	if !reflect.DeepEqual(expected, actual) {
 		args = append([]interface{}{expected, expected, actual, actual}, args...)
-		tw.assertFailed("[test assert failed] should be equal: [%v(%T)] <-expected actual-> [%v(%T)]", args...)
+		tw.assertFailed("[test assert failed] should be equal: \n[%v(%T)] \n<-expected actual-> \n[%v(%T)]", args...)
 	}
 	return tw
 }
