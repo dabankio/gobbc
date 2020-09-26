@@ -246,6 +246,13 @@ func (b *TXBuilder) SetVersion(v int) *TXBuilder {
 	return b
 }
 
+// SetType 当前版本 1
+func (b *TXBuilder) SetType(v int) *TXBuilder {
+	b.rtx.Typ = uint16(v)
+	return b
+}
+
+
 // AddInput 参考listunspent,确保输入金额满足amount
 func (b *TXBuilder) AddInput(txid string, vout uint8) *TXBuilder {
 	bytes, err := hex.DecodeString(txid)
@@ -351,15 +358,17 @@ func (b *TXBuilder) Build() (*RawTransaction, error) {
 		return nil, errors.New("tx fee not set")
 	}
 
-	noZeroFound := true
-	for i := 0; i < 32; i++ {
-		if b.rtx.HashAnchorBytes[i] != 0 {
-			noZeroFound = false
-			break
-		}
-	}
-	if noZeroFound {
-		return nil, errors.New("fork id not provided")
+	{ //不再检查forkID, MKF不需要这个
+		// noZeroFound := true
+		// for i := 0; i < 32; i++ {
+		// 	if b.rtx.HashAnchorBytes[i] != 0 {
+		// 		noZeroFound = false
+		// 		break
+		// 	}
+		// }
+		// if noZeroFound {
+		// 	return nil, errors.New("fork id not provided")
+		// }
 	}
 	if b.err != nil {
 		return nil, b.err
