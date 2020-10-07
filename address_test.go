@@ -92,19 +92,19 @@ func TestConvertAddress2pubk(t *testing.T) {
 
 func TestCreateTemplateDataDexOrder(t *testing.T) {
 	/**
-			bigbang> addnewtemplate dexorder '{"seller_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","coinpair":"bbc/mkf","price":10,"fee": 0.002,"recv_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","valid_height": 300,"match_address": "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd","deal_address": "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb"}'
-	2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v
-	bigbang> validateaddress 2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v
+	bigbang> addnewtemplate dexorder '{"seller_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","coinpair":"bbc/mkf","price":10,"fee": 0.002,"recv_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","valid_height": 300,"match_address": "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd","deal_address": "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb"}'
+	2140cp9r0rchawvvcvbtkxe440h844xx4h8h1hbcwdpd4tqtcxnjy1vqv
+	bigbang> validateaddress 2140cp9r0rchawvvcvbtkxe440h844xx4h8h1hbcwdpd4tqtcxnjy1vqv
 	{
 	    "isvalid" : true,
 	    "addressdata" : {
-	        "address" : "2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v",
+	        "address" : "2140cp9r0rchawvvcvbtkxe440h844xx4h8h1hbcwdpd4tqtcxnjy1vqv",
 	        "ismine" : true,
 	        "type" : "template",
 	        "template" : "dexorder",
 	        "templatedata" : {
 	            "type" : "dexorder",
-	            "hex" : "09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b66a0860100140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a80178962a8d595d0585a52f98584e58064b41f485d5eb7e89d2f4b9de0e235fe189",
+	            "hex" : "09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b6600e8764817000000140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a8390000000000000031663262326e336173626d3272623939666b316334777030363964307a3931656e78647a386b6d716d713766307738747a7736346864657662",
 	            "dexorder" : {
 	                "seller_address" : "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
 	                "coinpair" : "bbc/mkf",
@@ -124,19 +124,19 @@ func TestCreateTemplateDataDexOrder(t *testing.T) {
 	add, data, err := CreateTemplateDataDexOrder(DexOrderParam{
 		SellerAddress: "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
 		Coinpair:      "bbc/mkf",
-		Price:         10_0000, //10
-		Fee:           2_0,     //0.002
+		Price:         10_0_000_000_000, //10
+		Fee:           2_0,              //0.002
 		RecvAddress:   "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
 		ValidHeight:   300,
 		MatchAddress:  "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd",
 		DealAddress:   "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb",
 	})
 	tw.Nil(err)
-	tw.Equal("2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v", add)
 	tw.Equal(
-		"09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b66a0860100140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a80178962a8d595d0585a52f98584e58064b41f485d5eb7e89d2f4b9de0e235fe189",
+		"09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b6600e8764817000000140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a8390000000000000031663262326e336173626d3272623939666b316334777030363964307a3931656e78647a386b6d716d713766307738747a7736346864657662",
 		data,
 	)
+	tw.Equal("2140cp9r0rchawvvcvbtkxe440h844xx4h8h1hbcwdpd4tqtcxnjy1vqv", add)
 }
 
 func TestPrice(t *testing.T) {

@@ -179,12 +179,12 @@ type Address string
 type DexOrderParam struct {
 	SellerAddress Address `json:"seller_address"`
 	Coinpair      string  `json:"coinpair"`
-	Price         int32   `json:"price"`
+	Price         int64   `json:"price"`
 	Fee           int32   `json:"fee"`
 	RecvAddress   string  `json:"recv_address"`
 	ValidHeight   int32   `json:"valid_height"`
 	MatchAddress  Address `json:"match_address"`
-	DealAddress   Address `json:"deal_address"`
+	DealAddress   string  `json:"deal_address"`
 }
 
 // CreateTemplateDataDexOrder return tplID, tplData, error
@@ -224,7 +224,7 @@ func CreateTemplateDataDexOrder(p DexOrderParam) (string, string, error) {
 	writeString(p.RecvAddress)
 	write(p.ValidHeight)
 	writeAddress(p.MatchAddress)
-	writeAddress(p.DealAddress)
+	writeString(p.DealAddress)
 	if len(errs) != 0 {
 		return "", "", fmt.Errorf("some errors when write binary: %v", errs)
 	}
