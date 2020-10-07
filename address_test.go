@@ -1,6 +1,7 @@
 package gobbc
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -87,4 +88,61 @@ func TestConvertAddress2pubk(t *testing.T) {
 	w.Nil(err)
 	expected := "cf93717bfc6166b97ab76ada709a4aa84c9c1d0af82b3d25a7575aa1965b757c"
 	w.Equal(expected, pubk)
+}
+
+func TestCreateTemplateDataDexOrder(t *testing.T) {
+	/**
+			bigbang> addnewtemplate dexorder '{"seller_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","coinpair":"bbc/mkf","price":10,"fee": 0.002,"recv_address":"1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn","valid_height": 300,"match_address": "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd","deal_address": "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb"}'
+	2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v
+	bigbang> validateaddress 2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v
+	{
+	    "isvalid" : true,
+	    "addressdata" : {
+	        "address" : "2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v",
+	        "ismine" : true,
+	        "type" : "template",
+	        "template" : "dexorder",
+	        "templatedata" : {
+	            "type" : "dexorder",
+	            "hex" : "09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b66a0860100140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a80178962a8d595d0585a52f98584e58064b41f485d5eb7e89d2f4b9de0e235fe189",
+	            "dexorder" : {
+	                "seller_address" : "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
+	                "coinpair" : "bbc/mkf",
+	                "price" : 10.000000,
+	                "fee" : 0.002000,
+	                "recv_address" : "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
+	                "valid_height" : 300,
+	                "match_address" : "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd",
+	                "deal_address" : "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb"
+	            }
+	        }
+	    }
+	}
+	*/
+
+	tw := TW{T: t}
+	add, data, err := CreateTemplateDataDexOrder(DexOrderParam{
+		SellerAddress: "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
+		Coinpair:      "bbc/mkf",
+		Price:         10_0000, //10
+		Fee:           2_0,     //0.002
+		RecvAddress:   "1jv78wjv22hmzcwv07bkkphnkj51y0kjc7g9rwdm05erwmr2n8tvh8yjn",
+		ValidHeight:   300,
+		MatchAddress:  "15cx56x0gtv44bkt21yryg4m6nn81wtc7gkf6c9vwpvq1cgmm8jm7m5kd",
+		DealAddress:   "1f2b2n3asbm2rb99fk1c4wp069d0z91enxdz8kmqmq7f0w8tzw64hdevb",
+	})
+	tw.Nil(err)
+	tw.Equal("2140bcnbpqem6g6xyqa7gkgdthhxpfqt2ew71whf67rjd67e374r7qs5v", add)
+	tw.Equal(
+		"09000196ce8e4b621469f673603ae73b46b39143e04e4c3c138e36802bb1ca605546b707000000000000006262632f6d6b66a0860100140000003900000000000000316a763738776a763232686d7a6377763037626b6b70686e6b6a353179306b6a633767397277646d30356572776d72326e3874766838796a6e2c010000012b3a537410d6c845cf420fb1e81286ad501e698784de66277cb6ee16429444a80178962a8d595d0585a52f98584e58064b41f485d5eb7e89d2f4b9de0e235fe189",
+		data,
+	)
+}
+
+func TestPrice(t *testing.T) {
+	x, y := "a0860100", "14000000"
+	b, _ := hex.DecodeString(x)
+	fmt.Println(binary.LittleEndian.Uint32(b))
+	b, _ = hex.DecodeString(y)
+	fmt.Println(binary.LittleEndian.Uint32(b))
 }

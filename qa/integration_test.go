@@ -3,6 +3,7 @@ package qa
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/dabankio/bbrpc"
 	"github.com/dabankio/devtools4chains"
@@ -47,6 +48,36 @@ func TestMakekeypair(t *testing.T) {
 		tw.Nil(err)
 		tw.Nil(bbrpc.Wait4balanceReach(pair.Addr, prepareAmount, client))
 	}
+
+	t.Run("tx builder 构造to template address 与 rpc创建交易一致", func(_t *testing.T) {
+		fee := 0.03
+		txdata, err := client.Createtransaction(bbrpc.CmdCreatetransaction{
+			From:   pair.Addr,
+			To:     minerAddr,
+			Amount: 1.1,
+			Txfee:  &fee,
+		})
+		tw.Nil(err).True(txdata != nil)
+
+		forks, err := client.Listfork(true)
+		tw.Nil(err)
+		unspents, err := client.Listunspent(pair.Addr, nil, 999)
+		tw.Nil(err)
+		utxo := unspents.Addresses[0].Unspents[0]
+
+		rtx, err := gobbc.NewTXBuilder().
+			SetTimestamp(int(time.Now().Unix())).
+			AddInput(utxo.Txid, uint8(utxo.Out)).
+			SetAddress(minerAddr).
+			SetAmount(1.1).
+			SetAnchor(forks[0].Fork).
+			SetFee(0.03).
+			Build()
+		tw.Nil(err)
+
+		txStr, err := rtx.Encode(gobbc.BBCSerializer, false)
+		tw.Nil(err).Equal(*txdata, txStr)
+	})
 
 	t.Run("可以正常签名，签名结果与用rpc签名的一致,签名结果可以正常广播", func(_t *testing.T) {
 		txdata, err := client.Createtransaction(bbrpc.CmdCreatetransaction{

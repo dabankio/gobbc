@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const alphabet = "0123456789abcdefghjkmnpqrstvwxyz" //base32 words
+const base32Alphabet = "0123456789abcdefghjkmnpqrstvwxyz" //base32 words
 
 // static const uint crc24q_table[256] = {
 var crc24qTable = [256]uint{
@@ -85,14 +85,14 @@ func crc24q(data []uint8, size int) uint {
 func base32Encode5Bytes(md5 []uint8) string {
 	// fmt.Println("base325bytes in:", md5)
 	ret := ""
-	ret = ret + string(alphabet[(md5[0]>>3)&0x1F])
-	ret = ret + string(alphabet[((md5[0]<<2)&0x1C)|((md5[1]>>6)&0x03)])
-	ret = ret + string(alphabet[(md5[1]>>1)&0x1F])
-	ret = ret + string(alphabet[((md5[1]<<4)&0x10)|((md5[2]>>4)&0x0F)])
-	ret = ret + string(alphabet[((md5[2]<<1)&0x1E)|((md5[3]>>7)&0x01)])
-	ret = ret + string(alphabet[(md5[3]>>2)&0x1F])
-	ret = ret + string(alphabet[((md5[3]<<3)&0x18)|((md5[4]>>5)&0x07)])
-	ret = ret + string(alphabet[(md5[4]&0x1F)])
+	ret = ret + string(base32Alphabet[(md5[0]>>3)&0x1F])
+	ret = ret + string(base32Alphabet[((md5[0]<<2)&0x1C)|((md5[1]>>6)&0x03)])
+	ret = ret + string(base32Alphabet[(md5[1]>>1)&0x1F])
+	ret = ret + string(base32Alphabet[((md5[1]<<4)&0x10)|((md5[2]>>4)&0x0F)])
+	ret = ret + string(base32Alphabet[((md5[2]<<1)&0x1E)|((md5[3]>>7)&0x01)])
+	ret = ret + string(base32Alphabet[(md5[3]>>2)&0x1F])
+	ret = ret + string(base32Alphabet[((md5[3]<<3)&0x18)|((md5[4]>>5)&0x07)])
+	ret = ret + string(base32Alphabet[(md5[4]&0x1F)])
 	return ret
 }
 

@@ -1,12 +1,16 @@
 package gobbc
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"encoding/base32"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 //some len const
@@ -15,6 +19,11 @@ const (
 	PrivkeyHexLen    = 32*2 + 1
 	PubkeyAddressLen = 57 + 1
 	Uint256HexLen    = 65
+
+	templateDexorder = 9
+
+	AddressPrefixPubk = '1'
+	AddressPrefixTpl  = '2'
 )
 
 // AddrKeyPair 地址、私钥、公钥
@@ -132,7 +141,7 @@ func ParsePrivkHex(privkHex string) (ed25519.PrivateKey, error) {
 func GetPubKeyAddress(pubk string) (string, error) {
 	var ui uint256
 	uint256SetHex(&ui, pubk)
-	return "1" + Base32Encode(ui[:]), nil
+	return string(AddressPrefixPubk) + Base32Encode(ui[:]), nil
 }
 
 // EncodeAddress Get Address hex string from public key hex string
@@ -144,10 +153,10 @@ func EncodeAddress(prefix uint8, pubk string) (string, error) {
 
 // ConvertAddress2pubk .
 func ConvertAddress2pubk(address string) (string, error) {
-	if address[0] != '1' {
+	if address[0] != AddressPrefixPubk {
 		return "", errors.New("pubk address should start with 1")
 	}
-	enc := base32.NewEncoding(alphabet)
+	enc := base32.NewEncoding(base32Alphabet)
 	b, err := enc.DecodeString(address[1:])
 	if err != nil {
 		return "", fmt.Errorf("base32 decode address err, %v", err)
@@ -162,4 +171,91 @@ func ConvertAddress2pubk(address string) (string, error) {
 		return "", fmt.Errorf("校验不通过")
 	}
 	return pubk[6:], nil //前 3 byte是校验位
+}
+
+type Address string
+
+// DexOrderParam .
+type DexOrderParam struct {
+	SellerAddress Address `json:"seller_address"`
+	Coinpair      string  `json:"coinpair"`
+	Price         int32   `json:"price"`
+	Fee           int32   `json:"fee"`
+	RecvAddress   string  `json:"recv_address"`
+	ValidHeight   int32   `json:"valid_height"`
+	MatchAddress  Address `json:"match_address"`
+	DealAddress   Address `json:"deal_address"`
+}
+
+// CreateTemplateDataDexOrder return tplID, tplData, error
+func CreateTemplateDataDexOrder(p DexOrderParam) (string, string, error) {
+	buf := bytes.NewBuffer(nil)
+	var errs []error
+
+	write := func(v interface{}) {
+		if e := binary.Write(buf, binary.LittleEndian, v); e != nil {
+			errs = append(errs, e)
+		}
+	}
+	writeAddress := func(add Address) {
+		prefix, b, e := GetAddressBytes(string(add))
+		if e != nil {
+			errs = append(errs, e)
+			return
+		}
+		b = append([]byte{prefix}, b...)
+		if _, e = buf.Write(b); e != nil {
+			errs = append(errs, e)
+		}
+	}
+	writeString := func(s string) {
+		b := []byte(s)
+		write(int64(len(b)))
+		if _, e := buf.Write(b); e != nil {
+			errs = append(errs, e)
+		}
+	}
+	// os << destSeller << vCoinPair << nPrice << nFee << vRecvDest << nValidHeight << destMatch << destDeal;
+	write(int16(templateDexorder))
+	writeAddress(p.SellerAddress)
+	writeString(p.Coinpair)
+	write(p.Price)
+	write(p.Fee)
+	writeString(p.RecvAddress)
+	write(p.ValidHeight)
+	writeAddress(p.MatchAddress)
+	writeAddress(p.DealAddress)
+	if len(errs) != 0 {
+		return "", "", fmt.Errorf("some errors when write binary: %v", errs)
+	}
+	hash := blake2b.Sum256(buf.Bytes()[2:]) //remove type
+	x := make([]byte, 2)
+	binary.LittleEndian.PutUint16(x, templateDexorder)
+	x = append(x, hash[:len(hash)-2]...)
+	return string(AddressPrefixTpl) + Base32Encode(x[:]), hex.EncodeToString(buf.Bytes()), nil
+}
+
+// GetAddressBytes prefix, pubkOrHash, error
+func GetAddressBytes(add string) (byte, []byte, error) {
+	switch add[0] {
+	case AddressPrefixPubk: //1: pubk address
+		pubk, err := ConvertAddress2pubk(add)
+		if err != nil {
+			return 0, nil, err
+		}
+		bytes, err := hex.DecodeString(pubk)
+		if err != nil {
+			return 0, nil, err
+		}
+		return 1, reverseBytes(bytes), nil
+	case AddressPrefixTpl: //模版地址
+		enc := base32.NewEncoding(base32Alphabet)
+		db, err := enc.DecodeString(add[1:])
+		if err != nil {
+			return 0, nil, err
+		}
+		return 2, db[:], nil
+	default:
+		return 0, nil, errors.New("unknown address type")
+	}
 }

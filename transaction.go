@@ -246,12 +246,11 @@ func (b *TXBuilder) SetVersion(v int) *TXBuilder {
 	return b
 }
 
-// SetType 当前版本 1
+// SetType tx type
 func (b *TXBuilder) SetType(v int) *TXBuilder {
 	b.rtx.Typ = uint16(v)
 	return b
 }
-
 
 // AddInput 参考listunspent,确保输入金额满足amount
 func (b *TXBuilder) AddInput(txid string, vout uint8) *TXBuilder {
@@ -266,18 +265,20 @@ func (b *TXBuilder) AddInput(txid string, vout uint8) *TXBuilder {
 	return b
 }
 
-// SetAddress 转账地址,目前只支持公钥地址
+// SetAddress 转账地址
 func (b *TXBuilder) SetAddress(add string) *TXBuilder {
-	pubk, err := ConvertAddress2pubk(add)
-	if b.setErr(err) {
-		return b
+	switch add[0] {
+	case AddressPrefixPubk, AddressPrefixTpl: //1: pubk address, 2: 模版地址
+		prefix, pubkOrHash, err := GetAddressBytes(add)
+		if b.setErr(err) {
+			return b
+		}
+		b.rtx.Prefix = prefix
+		copy(b.rtx.AddressBytes[:], pubkOrHash)
+	default:
+		b.setErr(errors.New("unknown address type"))
 	}
-	bytes, err := hex.DecodeString(pubk)
-	if b.setErr(err) {
-		return b
-	}
-	b.rtx.Prefix = 1 //1: pubk address
-	copy(b.rtx.AddressBytes[:], reverseBytes(bytes))
+
 	return b
 }
 

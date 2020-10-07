@@ -12,7 +12,7 @@ import (
 var BBCSerializer Serializer = serializer{includeAnchor: true}
 var MKFSerializer Serializer = serializer{includeAnchor: false}
 
-// Serializer .
+// Serializer tx Serializer
 type Serializer interface {
 	Serialize(RawTransaction) ([]byte, error)
 	Deserialize([]byte) (RawTransaction, error)
