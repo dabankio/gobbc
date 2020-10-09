@@ -17,6 +17,8 @@ const (
 	TemplateTypeVote //dpos投票
 	TemplateTypePayment
 	TemplateTypeMax
+
+	TemplateTypeMultisigPrefix = "02" //2 little endian
 )
 
 // TemplateDataSpliter 使用,分隔多个template data

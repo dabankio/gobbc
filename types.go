@@ -46,6 +46,19 @@ type TXData struct {
 	TxHex  string `json:"tx_hex,omitempty"`  //encoded tx data
 }
 
+// ContainsMultisig .
+func (data *TXData) ContainsMultisig() bool {
+	for _, tpl := range strings.Split(data.TplHex, TemplateDataSpliter) {
+		if len(tpl) == 0 {
+			continue
+		}
+		if strings.HasPrefix(tpl, TemplateTypeMultisigPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // EncodeString json marshal + hex encode
 func (data *TXData) EncodeString() (string, error) {
 	return fmt.Sprintf("enc;%s;%s", data.TplHex, data.TxHex), nil
