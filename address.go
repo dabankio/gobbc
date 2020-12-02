@@ -24,6 +24,9 @@ const (
 
 	AddressPrefixPubk = '1'
 	AddressPrefixTpl  = '2'
+
+	PrefixPubk     = 1
+	PrefixTemplate = 2
 )
 
 // AddrKeyPair 地址、私钥、公钥
@@ -139,15 +142,15 @@ func ParsePrivkHex(privkHex string) (ed25519.PrivateKey, error) {
 
 // GetPubKeyAddress Get Address hex string from public key hex string
 func GetPubKeyAddress(pubk string) (string, error) {
-	var ui uint256
-	uint256SetHex(&ui, pubk)
-	return string(AddressPrefixPubk) + Base32Encode(ui[:]), nil
+	return EncodeAddress(PrefixPubk, pubk)
 }
 
 // EncodeAddress Get Address hex string from public key hex string
-func EncodeAddress(prefix uint8, pubk string) (string, error) {
-	var ui uint256
-	uint256SetHex(&ui, pubk)
+func EncodeAddress(prefix uint8, hexed string) (string, error) {
+	if len(hexed) != 64 {
+		return "", errors.New("invalid address len, should be 64")
+	}
+	ui := uint256SetHex(hexed)
 	return strconv.Itoa(int(prefix)) + Base32Encode(ui[:]), nil
 }
 
@@ -174,6 +177,38 @@ func ConvertAddress2pubk(address string) (string, error) {
 }
 
 type Address string
+
+func NewCDestinationFromString(s string) (cd CDestination, err error) {
+	if len(s) != 66 { //2*(32+1)
+		return cd, errors.New("invalid len, should be 66")
+	}
+	i, e := strconv.Atoi(s[:2])
+	if e != nil {
+		return cd, e
+	}
+	cd.Prefix = uint8(i)
+	b, e := hex.DecodeString(s[2:])
+	if e != nil {
+		return cd, e
+	}
+	copy(cd.Data[:], b)
+	return
+}
+
+type CDestination struct {
+	Prefix uint8
+	Data   [32]byte
+}
+
+func (a CDestination) String() string {
+	add, _ := EncodeAddress(a.Prefix, hex.EncodeToString(CopyReverse(a.Data[:])))
+	return add
+}
+
+type VoteTpl struct {
+	Delegate CDestination
+	Voter    CDestination
+}
 
 // DexOrderParam .
 type DexOrderParam struct {

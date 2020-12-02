@@ -51,14 +51,15 @@ var hexDigits = [256]uint8{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 84...97(0xa)...102(0xf)...111
 }
 
-func uint256SetHex(t *uint256, hexed string) int {
+func uint256SetHex(hexed string) uint256 {
+	var t uint256
 	for i, j := 0, len(hexed)-1; i < 32; i++ {
 		t[i] = hexDigits[hexed[j]]
 		j--
 		t[i] = t[i] | hexDigits[hexed[j]]<<4
 		j--
 	}
-	return 0
+	return t
 }
 
 func uint256GetHex(data []byte) string {
