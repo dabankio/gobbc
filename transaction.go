@@ -207,22 +207,23 @@ func NewTXBuilder() *TXBuilder {
 }
 
 // return b.err != nil
-func (b *TXBuilder) setErr(e error) bool {
+func (b *TXBuilder) SetErr(e error) {
 	if b.err == nil {
 		b.err = e
+	} else {
+		b.err = errors.Errorf("%s; %s", b.err, e)
 	}
-	return b.err != nil
 }
 
 // SetAnchor 锚定分支id
 func (b *TXBuilder) SetAnchor(anchor string) *TXBuilder {
 	bytes, err := hex.DecodeString(anchor)
 	if err != nil {
-		b.setErr(fmt.Errorf("hex decode anchor failed, %v", err))
+		b.SetErr(fmt.Errorf("hex decode anchor failed, %v", err))
 		return b
 	}
 	if len(bytes) != 32 {
-		b.setErr(fmt.Errorf("%s 似乎不是合法的 anchor,长度不是32", anchor))
+		b.SetErr(fmt.Errorf("%s 似乎不是合法的 anchor,长度不是32", anchor))
 		return b
 	}
 	copy(b.rtx.HashAnchorBytes[:], reverseBytes(bytes))
@@ -257,7 +258,7 @@ func (b *TXBuilder) SetType(v int) *TXBuilder {
 func (b *TXBuilder) AddInput(txid string, vout uint8) *TXBuilder {
 	bytes, err := hex.DecodeString(txid)
 	if err != nil {
-		b.setErr(fmt.Errorf("%s 似乎不是合法的txid, %v", txid, err))
+		b.SetErr(fmt.Errorf("%s 似乎不是合法的txid, %v", txid, err))
 		return b
 	}
 	b.rtx.SizeIn++
@@ -271,13 +272,14 @@ func (b *TXBuilder) SetAddress(add string) *TXBuilder {
 	switch add[0] {
 	case AddressPrefixPubk, AddressPrefixTpl: //1: pubk address, 2: 模版地址
 		prefix, pubkOrHash, err := GetAddressBytes(add)
-		if b.setErr(err) {
+		if err != nil {
+			b.SetErr(errors.Wrap(err, "GetAddressBytes err"))
 			return b
 		}
 		b.rtx.Prefix = prefix
 		copy(b.rtx.AddressBytes[:], pubkOrHash)
 	default:
-		b.setErr(errors.New("unknown address type"))
+		b.SetErr(errors.New("unknown address type"))
 	}
 
 	return b
@@ -286,7 +288,7 @@ func (b *TXBuilder) SetAddress(add string) *TXBuilder {
 // SetAmount 转账金额
 func (b *TXBuilder) SetAmount(amount float64) *TXBuilder {
 	if amount < 0 {
-		b.setErr(fmt.Errorf("amount should be greater than 0"))
+		b.SetErr(fmt.Errorf("amount should be greater than 0"))
 		return b
 	}
 	b.rtx.Amount = decimal.NewFromFloat(amount).Mul(decimal.NewFromInt(Precision)).IntPart()
@@ -296,7 +298,7 @@ func (b *TXBuilder) SetAmount(amount float64) *TXBuilder {
 // SetFee 手续费，目前0.01，如果带data则0.03, 额外需咨询BBC
 func (b *TXBuilder) SetFee(fee float64) *TXBuilder {
 	if fee < 0 {
-		b.setErr(fmt.Errorf("amount should be greater than 0"))
+		b.SetErr(fmt.Errorf("amount should be greater than 0"))
 		return b
 	}
 	b.rtx.TxFee = decimal.NewFromFloat(fee).Mul(decimal.NewFromInt(Precision)).IntPart()
@@ -315,22 +317,22 @@ func (b *TXBuilder) SetRawData(data []byte) *TXBuilder {
 func (b *TXBuilder) SetDataWith(_uuid string, timestamp int64, dataFmt string, data []byte) *TXBuilder {
 	_id, err := uuid.Parse(_uuid)
 	if err != nil {
-		b.setErr(errors.Wrap(err, "parse uuid failed"))
+		b.SetErr(errors.Wrap(err, "parse uuid failed"))
 		return b
 	}
 	vd, err := NewVchDataWith(_id, time.Unix(timestamp, 0), dataFmt, data)
 	if err != nil {
-		b.setErr(errors.Wrap(err, "new vch data err"))
+		b.SetErr(errors.Wrap(err, "new vch data err"))
 		return b
 	}
 	return b.SetRawData(vd.Bytes())
 }
 
 // SetData 自动编码数据,自动生成uuid和时间戳,不带格式描述
-func (b *TXBuilder) SetData(data []byte) *TXBuilder {
-	vd, err := NewVchData("", data)
+func (b *TXBuilder) SetData(dataFmt string, data []byte) *TXBuilder {
+	vd, err := NewVchData(dataFmt, data)
 	if err != nil {
-		b.setErr(errors.Wrap(err, "new vch data err"))
+		b.SetErr(errors.Wrap(err, "new vch data err"))
 		return b
 	}
 	return b.SetRawData(vd.Bytes())
