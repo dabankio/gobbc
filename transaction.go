@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -302,49 +303,37 @@ func (b *TXBuilder) SetFee(fee float64) *TXBuilder {
 	return b
 }
 
-// SetData 原始data设置,参考 UtilDataEncoding
-func (b *TXBuilder) SetData(data []byte) *TXBuilder {
+// SetRawData https://github.com/BigBang-Foundation/BigBang/wiki/通用Tx-vchData系列化定义,
+// 原始data设置,不自动填充任何数据（不自动提供uuid time format数据）
+func (b *TXBuilder) SetRawData(data []byte) *TXBuilder {
 	b.rtx.SizeOut = uint64(len(data))
 	b.rtx.VchData = data
 	return b
 }
 
-// SetDataWithUUID 指定uuid,timestamp,data
-func (b *TXBuilder) SetDataWithUUID(_uuid string, timestamp int64, data string) *TXBuilder {
+// SetDataWith 指定uuid,timestamp,data
+func (b *TXBuilder) SetDataWith(_uuid string, timestamp int64, dataFmt string, data []byte) *TXBuilder {
 	_id, err := uuid.Parse(_uuid)
 	if err != nil {
 		b.setErr(errors.Wrap(err, "parse uuid failed"))
 		return b
 	}
-
-	timeBytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(timeBytes, uint32(timestamp))
-
-	_data, err := hex.DecodeString(strings.Join([]string{
-		strings.Replace(_id.String(), "-", "", -1),
-		hex.EncodeToString(timeBytes),
-		"00",
-		hex.EncodeToString([]byte(data)),
-	}, ""))
+	vd, err := NewVchDataWith(_id, time.Unix(timestamp, 0), dataFmt, data)
 	if err != nil {
-		b.setErr(errors.Wrap(err, "hex decode data err"))
+		b.setErr(errors.Wrap(err, "new vch data err"))
 		return b
 	}
-	b.rtx.SizeOut = uint64(len(_data))
-	b.rtx.VchData = _data
-	return b
+	return b.SetRawData(vd.Bytes())
 }
 
-// SetStringData 自动编码数据,自动生成uuid和时间戳
-func (b *TXBuilder) SetStringData(data string) *TXBuilder {
-	data = UtilDataEncoding(data)
-	bytes, err := hex.DecodeString(data)
+// SetData 自动编码数据,自动生成uuid和时间戳,不带格式描述
+func (b *TXBuilder) SetData(data []byte) *TXBuilder {
+	vd, err := NewVchData("", data)
 	if err != nil {
-		b.setErr(errors.Wrap(err, "encoding data err"))
+		b.setErr(errors.Wrap(err, "new vch data err"))
+		return b
 	}
-	b.rtx.VchData = bytes
-	b.rtx.SizeOut = uint64(len(bytes))
-	return b
+	return b.SetRawData(vd.Bytes())
 }
 
 // Build .

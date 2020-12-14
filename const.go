@@ -19,6 +19,10 @@ const (
 	TemplateTypeMax
 
 	TemplateTypeMultisigPrefix = "02" //2 little endian
+
+	// https://github.com/BigBang-Foundation/BigBang/wiki/通用Tx-vchData系列化定义
+	// DataSzDescNone 表示没有strDescription
+	DataSzDescNone uint8 = 0
 )
 
 // TemplateDataSpliter 使用,分隔多个template data

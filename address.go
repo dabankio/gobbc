@@ -166,7 +166,7 @@ func ConvertAddress2pubk(address string) (string, error) {
 	}
 	pubk := hex.EncodeToString(reverseBytes(b))
 
-	validateAddr, err := GetPubKeyAddress(pubk)
+	validateAddr, err := GetPubKeyAddress(pubk[6:])
 	if err != nil {
 		return "", fmt.Errorf("校验不通过, %v", err)
 	}
