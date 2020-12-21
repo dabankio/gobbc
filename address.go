@@ -178,7 +178,32 @@ func ConvertAddress2pubk(address string) (string, error) {
 
 type Address string
 
-func NewCDestinationFromString(s string) (cd CDestination, err error) {
+// NewCDestinationFromAddress 可以用来校验地址，或者获取原始地址字节
+func NewCDestinationFromAddress(address string) (cd CDestination, err error) {
+	if address[0] != AddressPrefixPubk && address[0] != AddressPrefixTpl {
+		return CDestination{}, errors.New("pubk address should start with 1")
+	}
+	enc := base32.NewEncoding(base32Alphabet)
+	b, err := enc.DecodeString(address[1:])
+	if err != nil {
+		return CDestination{}, fmt.Errorf("base32 decode address err, %v", err)
+	}
+
+	prefix, _ := strconv.Atoi(string(address[0]))
+	dest := CDestination{
+		Prefix: uint8(prefix),
+	}
+	if len(b) != 3+32 {
+		return dest, fmt.Errorf("invalid len: %d", len(b))
+	}
+	copy(dest.Data[:], b[:32]) //3个字节的校验位
+
+	if dest.String() != address {
+		return dest, errors.New("validate err: got " + dest.String())
+	}
+	return dest, nil
+}
+func NewCDestinationFromHexString(s string) (cd CDestination, err error) {
 	if len(s) != 66 { //2*(32+1)
 		return cd, errors.New("invalid len, should be 66")
 	}

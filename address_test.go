@@ -147,3 +147,28 @@ func TestPrice(t *testing.T) {
 	b, _ = hex.DecodeString(y)
 	fmt.Println(binary.LittleEndian.Uint32(b))
 }
+
+func TestNewCDestinationFromAddress(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{"pubk", "1jmpqgcvhkmjrca298emrm02zd412zmrd8jc9etgdb1s2p4sn9xa2kjjd", false},
+		{"template", "20w09v2efn50pvkncagjb0sxj37e36pfbjjnyzs4zcczy16g7tx7bm6d2", false},
+		{"template base32 err", "20w09v2efn50pvkncagjb0sxj37e36pfbjjnyzs4zcczyI6g7tx7bm6d2", true},
+		{"pubk validate err", "1jmpqgcvhkmjrca298emrm02zd412zmrd8jc9etgdb1s2p4sn9xa2kjj2", true},
+		{"pubk len err", "1jmpqgcvhkmjrca298emrm02zd412zmrd8jc9etgdb1s2p4sn9xa2kjj", true},
+		{"template validate err", "20w09v2efn50pvkncagjb0sxj37e36pfbjjnyzs4zcczy16g7tx7bm6d1", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewCDestinationFromAddress(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewCDestinationFromAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
