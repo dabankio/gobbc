@@ -156,6 +156,9 @@ func EncodeAddress(prefix uint8, hexed string) (string, error) {
 
 // ConvertAddress2pubk .
 func ConvertAddress2pubk(address string) (string, error) {
+	if len(address) != 57 {
+		return "", errors.New("invalid address (len err)")
+	}
 	if address[0] != AddressPrefixPubk {
 		return "", errors.New("pubk address should start with 1")
 	}
@@ -180,6 +183,9 @@ type Address string
 
 // NewCDestinationFromAddress 可以用来校验地址，或者获取原始地址字节
 func NewCDestinationFromAddress(address string) (cd CDestination, err error) {
+	if len(address) != 57 {
+		return CDestination{}, errors.New("invalid address len")
+	}
 	if address[0] != AddressPrefixPubk && address[0] != AddressPrefixTpl {
 		return CDestination{}, errors.New("pubk address should start with 1")
 	}
@@ -299,6 +305,9 @@ func CreateTemplateDataDexOrder(p DexOrderParam) (string, string, error) {
 
 // GetAddressBytes prefix, pubkOrHash, error
 func GetAddressBytes(add string) (byte, []byte, error) {
+	if len(add) != 57 {
+		return 0, nil, errors.New("invalid address len")
+	}
 	switch add[0] {
 	case AddressPrefixPubk: //1: pubk address
 		pubk, err := ConvertAddress2pubk(add)

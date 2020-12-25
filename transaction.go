@@ -269,6 +269,10 @@ func (b *TXBuilder) AddInput(txid string, vout uint8) *TXBuilder {
 
 // SetAddress 转账地址
 func (b *TXBuilder) SetAddress(add string) *TXBuilder {
+	if len(add) != 57 {
+		b.SetErr(errors.New("invalid address len"))
+		return b
+	}
 	switch add[0] {
 	case AddressPrefixPubk, AddressPrefixTpl: //1: pubk address, 2: 模版地址
 		prefix, pubkOrHash, err := GetAddressBytes(add)

@@ -82,14 +82,6 @@ func TestTemplateAddr(t *testing.T) {
 
 }
 
-func TestConvertAddress2pubk(t *testing.T) {
-	w := TW{T: t}
-	pubk, err := ConvertAddress2pubk("1fhtnq5n1b9bte99x5fw0m7cw9jm4n6kgv9nbeynscsgzryvhjf7ny9tm")
-	w.Nil(err)
-	expected := "cf93717bfc6166b97ab76ada709a4aa84c9c1d0af82b3d25a7575aa1965b757c"
-	w.Equal(expected, pubk)
-}
-
 func TestCreateTemplateDataDexOrder(t *testing.T) {
 	t.Skip("这个测试跳过，后来改了字段，测试用例没改，需要修复这个测试")
 	/**
@@ -168,6 +160,55 @@ func TestNewCDestinationFromAddress(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewCDestinationFromAddress() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+		})
+	}
+}
+
+func TestConvertAddress2pubk(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "blank",
+			args:    "",
+			wantErr: true,
+		},
+		{
+			name: "success",
+			args: "1fhtnq5n1b9bte99x5fw0m7cw9jm4n6kgv9nbeynscsgzryvhjf7ny9tm",
+			want: "cf93717bfc6166b97ab76ada709a4aa84c9c1d0af82b3d25a7575aa1965b757c",
+		},
+		{
+			name:    "template",
+			args:    "20w01rscsdy4p3sdv1g2m1dvp8e2rgxvzze35s0tchcztc0bjsvmew6h4",
+			wantErr: true,
+		},
+		{
+			name:    "base32 err",
+			args:    "1fhtnq5n1b9bte99x5fw0m7cw9jm4n6kgv9nbeynscsgzryvhjf7nyitm",
+			wantErr: true,
+		},
+		{
+			name:    "check err",
+			args:    "1fhtnq5n1b9bte99x5fw0m7cw9jm4n6kgv9nbeynscsgzryvhjf7ny9ta",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ConvertAddress2pubk(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ConvertAddress2pubk() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			} else if err != nil {
+				t.Log("err:", err)
+			}
+			if got != tt.want {
+				t.Errorf("ConvertAddress2pubk() = %v, want %v", got, tt.want)
 			}
 		})
 	}
